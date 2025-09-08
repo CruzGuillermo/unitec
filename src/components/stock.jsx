@@ -4,6 +4,10 @@ import { Share2, ClipboardCopy, MessageCircle, ArrowUp } from 'lucide-react';
 
 export default function Stock({ onBack }) {
   const [productos, setProductos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
+  const [categoriaId, setCategoriaId] = useState('');
+  const [subcategoriaId, setSubcategoriaId] = useState('');
   const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
@@ -11,7 +15,25 @@ export default function Stock({ onBack }) {
 
   useEffect(() => {
     fetchProductos();
+    fetchCategorias();
   }, []);
+
+  async function fetchCategorias() {
+    const { data } = await supabase.from('categorias').select('*');
+    setCategorias(data || []);
+  }
+
+  useEffect(() => {
+    async function fetchSubs() {
+      if (!categoriaId) {
+        setSubcategorias([]);
+        return;
+      }
+      const { data } = await supabase.from('subcategorias').select('*').eq('categoria_id', categoriaId);
+      setSubcategorias(data || []);
+    }
+    fetchSubs();
+  }, [categoriaId]);
 
   async function fetchProductos() {
     setLoading(true);
@@ -20,9 +42,12 @@ export default function Stock({ onBack }) {
     setLoading(false);
   }
 
-  const productosFiltrados = productos.filter(p =>
-    p.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  );
+  const productosFiltrados = productos.filter(p => {
+    const matchNombre = p.nombre.toLowerCase().includes(busqueda.toLowerCase());
+    const matchCat = categoriaId ? p.categoria_id === Number(categoriaId) : true;
+    const matchSub = subcategoriaId ? p.subcategoria_id === Number(subcategoriaId) : true;
+    return matchNombre && matchCat && matchSub;
+  });
 
   function abrirModal(producto) {
     setProductoModal(producto);
@@ -53,15 +78,43 @@ export default function Stock({ onBack }) {
   return (
     <div style={{ position: 'relative' }}>
       <h2 className="text-center mb-3">Stock de Productos</h2>
-      <div className="d-flex flex-column flex-md-row align-items-md-center mb-3 gap-2">
+      <div className="mb-2 d-flex justify-content-center">
         <input
           type="text"
-          className="form-control"
-          style={{ maxWidth: 300 }}
+          className="form-control text-center"
+          style={{ maxWidth: 220, minWidth: 120 }}
           placeholder="Buscar por nombre..."
           value={busqueda}
           onChange={e => setBusqueda(e.target.value)}
         />
+      </div>
+      <div className="d-flex flex-row justify-content-center gap-2 mb-3 flex-wrap">
+        <select
+          className="form-select"
+          style={{ maxWidth: 160, minWidth: 100 }}
+          value={categoriaId}
+          onChange={e => {
+            setCategoriaId(e.target.value);
+            setSubcategoriaId('');
+          }}
+        >
+          <option value="">Todas las categorías</option>
+          {categorias.map(cat => (
+            <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+          ))}
+        </select>
+        <select
+          className="form-select"
+          style={{ maxWidth: 160, minWidth: 100 }}
+          value={subcategoriaId}
+          onChange={e => setSubcategoriaId(e.target.value)}
+          disabled={!categoriaId}
+        >
+          <option value="">Todas las subcategorías</option>
+          {subcategorias.map(sub => (
+            <option key={sub.id} value={sub.id}>{sub.nombre}</option>
+          ))}
+        </select>
         {loading && <span className="text-primary">Cargando productos...</span>}
       </div>
       <div className="row g-3">
