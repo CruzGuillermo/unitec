@@ -1,20 +1,20 @@
-  function handleChange(e) {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  }
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
-export default function Editar() {
+export default function EditarProducto() {
   const [productos, setProductos] = useState([]);
-  const [loading, setLoading] = useState(false);
   const [busqueda, setBusqueda] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
-  const [productoEditar, setProductoEditar] = useState(null);
-  const [form, setForm] = useState({ nombre: '', descripcion: '', precio: '', stock: '', imagen: '' });
+  const [form, setForm] = useState({ id: '', nombre: '', descripcion: '', precio: '', stock: '', imagen: '', categoria_id: '', subcategoria_id: '' });
   const [alert, setAlert] = useState({ show: false, type: '', message: '' });
+  const [loading, setLoading] = useState(false);
+  const [categorias, setCategorias] = useState([]);
+  const [subcategorias, setSubcategorias] = useState([]);
 
   useEffect(() => {
     fetchProductos();
+    fetchCategorias();
   }, []);
 
   async function fetchProductos() {
@@ -24,22 +24,44 @@ export default function Editar() {
     setLoading(false);
   }
 
+  async function fetchCategorias() {
+    const { data } = await supabase.from('categorias').select('*');
+    setCategorias(data || []);
+  }
+
+  useEffect(() => {
+    async function fetchSubcategorias() {
+      if (!form.categoria_id) {
+        setSubcategorias([]);
+        return;
+      }
+      const { data } = await supabase.from('subcategorias').select('*').eq('categoria_id', form.categoria_id);
+      setSubcategorias(data || []);
+    }
+    fetchSubcategorias();
+  }, [form.categoria_id]);
+
   function abrirModal(producto) {
-    setProductoEditar(producto);
     setForm({
+      id: producto.id,
       nombre: producto.nombre,
       descripcion: producto.descripcion,
       precio: producto.precio,
       stock: producto.stock,
-      imagen: producto.imagen || ''
+      imagen: producto.imagen || '',
+      categoria_id: producto.categoria_id || '',
+      subcategoria_id: producto.subcategoria_id || ''
     });
     setModalOpen(true);
   }
 
   function cerrarModal() {
     setModalOpen(false);
-    setProductoEditar(null);
-    setForm({ nombre: '', descripcion: '', precio: '', stock: '', imagen: '' });
+    setForm({ id: '', nombre: '', descripcion: '', precio: '', stock: '', imagen: '', categoria_id: '', subcategoria_id: '' });
+  }
+
+  function handleChange(e) {
+    setForm({ ...form, [e.target.name]: e.target.value });
   }
 
   async function handleSubmit(e) {
@@ -64,8 +86,10 @@ export default function Editar() {
       descripcion: form.descripcion,
       precio: Number(form.precio),
       stock: Number(form.stock),
-      imagen: imageUrl
-    }).eq('id', productoEditar.id);
+      imagen: imageUrl,
+      categoria_id: form.categoria_id ? Number(form.categoria_id) : null,
+      subcategoria_id: form.subcategoria_id ? Number(form.subcategoria_id) : null
+    }).eq('id', form.id);
     if (!error) {
       setAlert({ show: true, type: 'success', message: 'Producto actualizado.' });
       fetchProductos();
@@ -76,6 +100,21 @@ export default function Editar() {
     setLoading(false);
     setTimeout(() => setAlert({ show: false, type: '', message: '' }), 3000);
   }
+
+  async function handleEliminar() {
+    setLoading(true);
+    const { error } = await supabase.from('productos').delete().eq('id', form.id);
+    if (!error) {
+      setAlert({ show: true, type: 'success', message: 'Producto eliminado.' });
+      fetchProductos();
+      cerrarModal();
+    } else {
+      setAlert({ show: true, type: 'danger', message: 'Error al eliminar.' });
+    }
+    setLoading(false);
+    setTimeout(() => setAlert({ show: false, type: '', message: '' }), 3000);
+  }
+
   function handleFileChange(e) {
     setForm({ ...form, nuevaImagen: e.target.files[0] });
   }
@@ -148,10 +187,31 @@ export default function Editar() {
                     <input type="file" accept="image/*" className="form-control" onChange={handleFileChange} />
                     <small className="form-text text-muted">Puedes subir una nueva imagen desde tu dispositivo.</small>
                   </div>
+                  <div className="mb-3">
+                    <label className="form-label">Categoría</label>
+                    <select name="categoria_id" className="form-select" value={form.categoria_id} onChange={handleChange} required>
+                      <option value="">Selecciona una categoría</option>
+                      {categorias.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div className="mb-3">
+                    <label className="form-label">Subcategoría</label>
+                    <select name="subcategoria_id" className="form-select" value={form.subcategoria_id} onChange={handleChange} required disabled={!form.categoria_id}>
+                      <option value="">Selecciona una subcategoría</option>
+                      {subcategorias.map(sub => (
+                        <option key={sub.id} value={sub.id}>{sub.nombre}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                <div className="modal-footer">
-                  <button type="submit" className="btn btn-info" disabled={loading}>Guardar</button>
-                  <button type="button" className="btn btn-secondary" onClick={cerrarModal}>Cancelar</button>
+                <div className="modal-footer d-flex justify-content-between">
+                  <div>
+                    <button type="submit" className="btn btn-info me-2" disabled={loading}>Guardar</button>
+                    <button type="button" className="btn btn-secondary" onClick={cerrarModal}>Cancelar</button>
+                  </div>
+                  <button type="button" className="btn btn-danger" onClick={handleEliminar} disabled={loading}>Eliminar producto</button>
                 </div>
               </form>
             </div>
