@@ -4,7 +4,8 @@ import { useState } from 'react';
 // import Vista from './vista';
 import Productos from './productos';
 import Stock from './stock';
-import { Package, Boxes, LayoutDashboard, Pencil, StickyNote, User, ShoppingCart } from 'lucide-react';
+import { Package, Boxes, LayoutDashboard, Pencil, StickyNote, User, ShoppingCart, Wrench } from 'lucide-react';
+import ServicioTecnico from './ServicioTecnico';
 import EditarProducto from './EditarProducto';
 import Notas from './notas';
 import Login from './Login';
@@ -76,6 +77,9 @@ export default function Sidebar() {
               </span>
             )}
           </button>
+          <button className={`btn btn-primary d-flex align-items-center justify-content-center${view==='serviciotecnico'?' active':''}`} style={{ width: 40, height: 40 }} onClick={()=>setView('serviciotecnico')} title="Servicio Técnico">
+            <Wrench size={22} />
+          </button>
           {usuario ? (
             <button className="btn btn-danger d-flex align-items-center justify-content-center" style={{ width: 40, height: 40 }} onClick={handleLogout} title="Cerrar sesión">
               <span style={{ fontWeight: 'bold', fontSize: 18 }}>×</span>
@@ -121,6 +125,7 @@ export default function Sidebar() {
           <div className="w-100" style={{ maxWidth: 700 }}>
             {view === 'stock' && <Stock />}
             {view === 'carrito' && <Carrito onCantidadChange={setCantidadCarrito} />}
+            {view === 'serviciotecnico' && <ServicioTecnico />}
           </div>
         </div>
       </div>
@@ -138,6 +143,7 @@ export default function Sidebar() {
           {view === 'editarproducto' && <EditarProducto />}
           {view === 'notas' && <Notas />}
           {view === 'carrito' && <Carrito onCantidadChange={setCantidadCarrito} />}
+          {view === 'serviciotecnico' && <ServicioTecnico />}
         </div>
       </div>
     </div>
