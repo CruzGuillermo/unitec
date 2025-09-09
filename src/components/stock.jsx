@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../supabaseClient';
-import { Share2, ClipboardCopy, MessageCircle, ArrowUp } from 'lucide-react';
+import { Share2, ClipboardCopy, MessageCircle, ArrowUp, ShoppingCart } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function Stock({ onBack }) {
   const [productos, setProductos] = useState([]);
+  // Estado para modal de agregar al carrito
+  const [modalAgregarOpen, setModalAgregarOpen] = useState(false);
+  const [productoAgregar, setProductoAgregar] = useState(null);
+  const [cantidadAgregar, setCantidadAgregar] = useState(1);
   const [categorias, setCategorias] = useState([]);
   const [subcategorias, setSubcategorias] = useState([]);
   const [categoriaId, setCategoriaId] = useState('');
@@ -53,6 +58,16 @@ export default function Stock({ onBack }) {
     setProductoModal(producto);
     setModalOpen(true);
   }
+  function abrirModalAgregar(producto) {
+    setProductoAgregar(producto);
+    setCantidadAgregar(1);
+    setModalAgregarOpen(true);
+  }
+  function cerrarModalAgregar() {
+    setModalAgregarOpen(false);
+    setProductoAgregar(null);
+    setCantidadAgregar(1);
+  }
 
   function cerrarModal() {
     setModalOpen(false);
@@ -77,7 +92,6 @@ export default function Stock({ onBack }) {
 
   return (
     <div style={{ position: 'relative' }}>
-      <h2 className="text-center mb-3">Stock de Productos</h2>
       <div className="mb-2 d-flex justify-content-center">
         <input
           type="text"
@@ -118,35 +132,123 @@ export default function Stock({ onBack }) {
         {loading && <span className="text-primary">Cargando productos...</span>}
       </div>
       <div className="row g-3">
-  {productosFiltrados.length > 0 ? productosFiltrados.map(p => (
-          <div key={p.id} className="col-6 col-md-6 col-lg-6">
-            <div className="card h-100 shadow-sm p-3 border-info mb-2 d-flex flex-column align-items-center" style={{ cursor: 'pointer' }} onClick={() => abrirModal(p)}>
-              {p.imagen && (
-                <img
-                  src={p.imagen}
-                  alt={p.nombre}
-                  className="img-fluid rounded border mb-2"
-                  style={{ width: '100%', maxWidth: 120, height: 120, objectFit: 'cover', border: p.stock === 0 ? '2px solid #dc3545' : '2px solid #0dcaf0' }}
-                />
-              )}
-              <h5 className={`card-title mb-1 ${p.stock === 0 ? 'text-danger' : 'text-primary'} text-center`}>{p.nombre}</h5>
-              <p className="mb-1 text-secondary text-center">{p.descripcion}</p>
-              <p className="mb-1 text-center"><span className="badge bg-success">${p.precio}</span></p>
-              <p className="mb-0 text-center">
-                {p.stock === 0 ? (
-                  <span className="badge bg-danger">Sin stock</span>
-                ) : (
-                  <span className="badge bg-warning text-dark">Stock: {p.stock}</span>
+        {productosFiltrados.length > 0 ? productosFiltrados.map(p => (
+          <motion.div
+            key={p.id}
+            className="col-6 col-md-6 col-lg-6"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          >
+            <div className="card h-100 shadow-sm p-3 border-info mb-2 d-flex flex-column align-items-center" style={{ cursor: 'pointer' }}>
+              <div style={{ width: '100%' }} onClick={() => abrirModal(p)}>
+                {p.imagen && (
+                  <div className="d-flex justify-content-center align-items-center w-100 mb-2" style={{ minHeight: 120 }}>
+                    <img
+                      src={p.imagen}
+                      alt={p.nombre}
+                      className="img-fluid rounded border"
+                      style={{ maxWidth: 120, height: 120, objectFit: 'cover', border: p.stock === 0 ? '2px solid #dc3545' : '2px solid #0dcaf0' }}
+                    />
+                  </div>
                 )}
-              </p>
+                <h5 className={`card-title mb-1 ${p.stock === 0 ? 'text-danger' : 'text-primary'} text-center`}>{p.nombre}</h5>
+                <p className="mb-1 text-secondary text-center">{p.descripcion}</p>
+                <p className="mb-1 text-center"><span className="badge bg-success">${p.precio}</span></p>
+                <p className="mb-0 text-center">
+                  {p.stock === 0 ? (
+                    <span className="badge bg-danger">Sin stock</span>
+                  ) : (
+                    <span className="badge bg-warning text-dark">Stock: {p.stock}</span>
+                  )}
+                </p>
+              </div>
+              <button
+                className="btn btn-info mt-2 w-100 d-flex align-items-center justify-content-center"
+                disabled={p.stock === 0}
+                onClick={() => abrirModalAgregar(p)}
+                style={{ fontWeight: 'bold' }}
+              >
+                <ShoppingCart size={18} className="me-2" />
+                Agregar al carrito
+              </button>
             </div>
-          </div>
+          </motion.div>
         )) : (
           <div className="col-12 text-center text-muted py-5">
             No se encontraron productos.
           </div>
         )}
       </div>
+      {/* Modal para agregar al carrito */}
+      {modalAgregarOpen && productoAgregar && (
+        <div className="modal fade show" style={{ display: 'block', background: 'rgba(0,0,0,0.3)' }} tabIndex="-1">
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Agregar al carrito</h5>
+                <button type="button" className="btn-close" onClick={cerrarModalAgregar}></button>
+              </div>
+              <div className="modal-body text-center">
+                {productoAgregar.imagen && (
+                  <img src={productoAgregar.imagen} alt={productoAgregar.nombre} className="img-fluid mb-3" style={{ maxHeight: 180, objectFit: 'contain' }} />
+                )}
+                <h5 className="mb-2">{productoAgregar.nombre}</h5>
+                <p className="mb-1">{productoAgregar.descripcion}</p>
+                <div className="mb-2">
+                  <span className="badge bg-success">${productoAgregar.precio}</span>
+                  {productoAgregar.stock === 0 ? (
+                    <span className="badge bg-danger ms-2">Sin stock</span>
+                  ) : (
+                    <span className="badge bg-primary ms-2">Stock: {productoAgregar.stock}</span>
+                  )}
+                </div>
+                <div className="mb-3 d-flex flex-column align-items-center">
+                  <label htmlFor="cantidadAgregar" className="form-label">Cantidad</label>
+                  <input
+                    id="cantidadAgregar"
+                    type="number"
+                    min={1}
+                    max={productoAgregar.stock}
+                    value={cantidadAgregar}
+                    onChange={e => {
+                      let val = Number(e.target.value);
+                      if (val < 1) val = 1;
+                      if (val > productoAgregar.stock) val = productoAgregar.stock;
+                      setCantidadAgregar(val);
+                    }}
+                    className="form-control text-center"
+                    style={{ maxWidth: 120 }}
+                    disabled={productoAgregar.stock === 0}
+                  />
+                </div>
+              </div>
+              <div className="modal-footer d-flex justify-content-center gap-3 bg-white border-0">
+                <button type="button" className="btn btn-info w-100" onClick={() => {
+                  // Agregar al carrito en localStorage con cantidad
+                  const guardado = localStorage.getItem('carrito');
+                  let items = [];
+                  if (guardado) {
+                    try { items = JSON.parse(guardado); } catch {}
+                  }
+                  const existe = items.find(p => p.id === productoAgregar.id);
+                  if (existe) {
+                    items = items.map(p => p.id === productoAgregar.id ? { ...p, cantidad: p.cantidad + cantidadAgregar } : p);
+                  } else {
+                    items.push({ ...productoAgregar, cantidad: cantidadAgregar });
+                  }
+                  localStorage.setItem('carrito', JSON.stringify(items));
+                  cerrarModalAgregar();
+                }} disabled={productoAgregar.stock === 0}>
+                  <ShoppingCart size={18} className="me-2" />
+                  Confirmar agregar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
   {/* Modal imagen grande */}
   {modalOpen && productoModal && (
@@ -185,12 +287,13 @@ export default function Stock({ onBack }) {
                 }}>
                   <Share2 size={22} />
                 </button>
-                <button type="button" className="btn btn-light border" title="WhatsApp" onClick={() => {
+                <button type="button" className="btn btn-light border d-flex align-items-center justify-content-center" title="WhatsApp" onClick={() => {
                   const url = window.location.href;
                   const text = encodeURIComponent(`${productoModal.nombre} - $${productoModal.precio}\n${productoModal.descripcion}\n${url}`);
                   window.open(`https://wa.me/?text=${text}`, '_blank');
                 }}>
-                  <MessageCircle size={22} color="#25D366" />
+                  <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/WhatsApp_icon.png/598px-WhatsApp_icon.png" alt="WhatsApp" style={{ width: 22, height: 22, marginRight: 6 }} />
+                  <span className="d-none d-md-inline">WhatsApp</span>
                 </button>
                 <button type="button" className="btn btn-light border" title="Copiar link" onClick={() => {
                   navigator.clipboard.writeText(window.location.href);
@@ -210,7 +313,7 @@ export default function Stock({ onBack }) {
           onClick={scrollToTop}
           style={{
             position: 'fixed',
-            bottom: 24,
+            bottom: 90,
             right: 24,
             zIndex: 1000,
             background: '#1976d2',
@@ -239,7 +342,7 @@ export default function Stock({ onBack }) {
         rel="noopener noreferrer"
         style={{
           position: 'fixed',
-          bottom: 80,
+          bottom: 24,
           right: 24,
           zIndex: 1000,
           background: '#25D366',
@@ -257,7 +360,7 @@ export default function Stock({ onBack }) {
         }}
         title="WhatsApp"
       >
-        <MessageCircle size={26} color="#fff" />
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/WhatsApp_icon.png/598px-WhatsApp_icon.png" alt="WhatsApp" style={{ width: 28, height: 28 }} />
       </a>
     </div>
   );

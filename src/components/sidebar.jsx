@@ -1,12 +1,14 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
+import logotipo from '../assets/logotipo.png';
 import { useState } from 'react';
 // import Vista from './vista';
 import Productos from './productos';
 import Stock from './stock';
-import { Package, Boxes, LayoutDashboard, Pencil, StickyNote, User } from 'lucide-react';
+import { Package, Boxes, LayoutDashboard, Pencil, StickyNote, User, ShoppingCart } from 'lucide-react';
 import EditarProducto from './EditarProducto';
 import Notas from './notas';
 import Login from './Login';
+import Carrito from './Carrito';
 
 export default function Sidebar() {
   const [view, setView] = useState('stock');
@@ -14,6 +16,16 @@ export default function Sidebar() {
   const [usuario, setUsuario] = useState(() => {
     const user = localStorage.getItem('usuario');
     return user ? JSON.parse(user) : null;
+  });
+  // Estado para cantidad de productos en el carrito
+  const [cantidadCarrito, setCantidadCarrito] = useState(() => {
+    const guardado = localStorage.getItem('carrito');
+    if (!guardado) return 0;
+    try {
+      return JSON.parse(guardado).reduce((acc, p) => acc + p.cantidad, 0);
+    } catch {
+      return 0;
+    }
   });
 
 
@@ -28,8 +40,16 @@ export default function Sidebar() {
   const navbar = (
     <nav className="navbar navbar-dark bg-primary" style={{ position: 'sticky', top: 0, zIndex: 20 }}>
       <div className="container-fluid d-flex flex-wrap align-items-center justify-content-between gap-2 py-2">
-        <span className="navbar-brand mb-2 mb-md-0">Unitec</span>
-  <div className="d-flex gap-2 flex-wrap align-items-center">
+        <span className="navbar-brand mb-2 mb-md-0 d-flex flex-column align-items-start" style={{ minWidth: 160 }}>
+          <div className="d-flex align-items-center gap-2">
+            <img src={logotipo} alt="WhatsApp" style={{ width: 36, height: 36, borderRadius: 8, background: '#fff' }} />
+            <span style={{ fontWeight: 'bold', fontSize: 22, color: '#fff', letterSpacing: 1 }}>Unitec</span>
+          </div>
+          <span style={{ fontSize: 14, color: '#e0e0e0', marginTop: 2, letterSpacing: 0.5 }}>
+            Servicio técnico <span style={{ fontWeight: 500, color: '#fff' }}>&amp;</span> accesorios
+          </span>
+        </span>
+        <div className="d-flex gap-2 flex-wrap align-items-center">
           {usuario && (
             <button className={`btn btn-primary d-flex align-items-center justify-content-center${view==='productos'?' active':''}`} style={{ width: 40, height: 40 }} onClick={()=>setView('productos')} title="Productos">
               <Package size={22} />
@@ -48,6 +68,14 @@ export default function Sidebar() {
               <StickyNote size={22} />
             </button>
           )}
+          <button className={`btn btn-primary d-flex align-items-center justify-content-center position-relative${view==='carrito'?' active':''}`} style={{ width: 40, height: 40 }} onClick={()=>setView('carrito')} title="Carrito">
+            <ShoppingCart size={22} />
+            {cantidadCarrito > 0 && (
+              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style={{ fontSize: 12 }}>
+                {cantidadCarrito}
+              </span>
+            )}
+          </button>
           {usuario ? (
             <button className="btn btn-danger d-flex align-items-center justify-content-center" style={{ width: 40, height: 40 }} onClick={handleLogout} title="Cerrar sesión">
               <span style={{ fontWeight: 'bold', fontSize: 18 }}>×</span>
@@ -57,7 +85,7 @@ export default function Sidebar() {
               <User size={22} />
             </button>
           )}
-        </div>
+  </div>
   {/* El input de búsqueda se muestra solo en Stock */}
       </div>
     </nav>
@@ -84,14 +112,15 @@ export default function Sidebar() {
     );
   }
 
-  // Si no hay usuario, solo mostrar Stock y pasar busqueda
+  // Si no hay usuario, mostrar Stock y Carrito, y el icono de carrito en el navbar
   if (!usuario) {
     return (
       <div className="bg-light min-vh-100">
         {navbar}
         <div className="d-flex flex-column justify-content-center align-items-center py-4">
           <div className="w-100" style={{ maxWidth: 700 }}>
-            <Stock />
+            {view === 'stock' && <Stock />}
+            {view === 'carrito' && <Carrito onCantidadChange={setCantidadCarrito} />}
           </div>
         </div>
       </div>
@@ -108,6 +137,7 @@ export default function Sidebar() {
           {view === 'stock' && <Stock />}
           {view === 'editarproducto' && <EditarProducto />}
           {view === 'notas' && <Notas />}
+          {view === 'carrito' && <Carrito onCantidadChange={setCantidadCarrito} />}
         </div>
       </div>
     </div>
