@@ -1,0 +1,93 @@
+/* Solo afecta desktop; móvil intacto */
+.stock-desktop-container { width: 100%; }
+.stock-desktop-grid { display: block; }
+
+@media (min-width: 992px) {
+  .stock-desktop-grid {
+    display: grid;
+    grid-template-columns: 260px minmax(0, 1fr);
+    gap: 16px;
+    align-items: start;
+  }
+  .stock-filtros {
+    position: sticky;
+    top: 12px;
+    align-self: start;
+    padding-right: 8px;
+    border-right: 1px solid #eee;
+  }
+  .stock-productos { width: 100%; }
+  .search-row { justify-content: flex-start !important; }
+  .filters-row { justify-content: flex-start !important; }
+}
+
+.stock-filtros { width: 100%; margin-bottom: 16px; }
+.stock-productos { width: 100%; }
+
+  /* Filtros desktop mejorados */
+  .filters-desktop .filter-card {
+    background: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+  .filters-desktop .filter-title {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 8px;
+  }
+  .filters-desktop .filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .filters-desktop .chip {
+    border-radius: 999px;
+    border: 1px solid #dee2e6;
+    background: #f8f9fa;
+    color: #495057;
+  }
+  .filters-desktop .chip:hover { background: #f1f3f5; }
+  .filters-desktop .chip-active {
+    background: #0d6efd;
+    color: #fff;
+    border-color: #0b5ed7;
+    box-shadow: 0 1px 2px rgba(13,110,253,.2);
+  }
+  .filters-desktop .filter-actions { padding: 4px 2px; }
+
+/* Card de filtros móvil: look compacto con acento */
+.mobile-filters-card {
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0,0,0,.04);
+  border-top: 3px solid #0d6efd;
+}
+.mobile-filters-card .form-label.small { color: #6c757d; }
+.mobile-filters-card .form-select,
+.mobile-filters-card .form-control {
+  border-radius: 10px;
+}
+.mobile-filters-card .btn-link.btn-sm {
+  color: #0d6efd;
+}
+.mobile-filters-card .btn-link.btn-sm:hover { color: #0b5ed7; text-decoration: underline; }
+
+/* Badges de producto para resaltar "Nuevo" y "Oferta" */
+.badge-nuevo { background: #20c997 !important; }
+.badge-oferta { background: #ff6b6b !important; }
+
+/* Botón de favorito (corazón) si existiera una clase dedicada) */
+.btn-fav {
+  color: #dc3545;
+}
+.btn-fav.active { color: #c1121f; }
+
+/* Tarjeta de producto: pulido visual */
+.stock-product-card {
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+}
+.stock-product-card .card-title { font-size: 1rem; font-weight: 600; }
+.stock-product-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,.06); }
+.stock-product-card .btn.btn-primary {
+  border-radius: 10px;
+}

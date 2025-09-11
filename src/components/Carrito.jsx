@@ -9,7 +9,11 @@ export default function Carrito({ onCantidadChange }) {
   // Persistir en localStorage y notificar cantidad
   useEffect(() => {
     localStorage.setItem('carrito', JSON.stringify(items));
-    if (onCantidadChange) onCantidadChange(items.reduce((acc, p) => acc + p.cantidad, 0));
+    const count = items.reduce((acc, p) => acc + p.cantidad, 0);
+    if (onCantidadChange) onCantidadChange(count);
+    // Notificar globalmente para que navbar y stock reaccionen al instante
+    const ids = items.map(i => i.id);
+    window.dispatchEvent(new CustomEvent('carritoUpdate', { detail: { count, ids } }));
   }, [items, onCantidadChange]);
 
   // Agregar producto al carrito

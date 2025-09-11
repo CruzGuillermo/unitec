@@ -1,6 +1,6 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import logotipo from '../assets/logotipo.png';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 // import Vista from './vista';
 import Productos from './productos';
 import Stock from './stock';
@@ -28,6 +28,24 @@ export default function Sidebar() {
       return 0;
     }
   });
+
+  // Sincronizar badge del carrito en tiempo real
+  useEffect(() => {
+    const handler = (e) => {
+      const count = e.detail?.count;
+      if (typeof count === 'number') setCantidadCarrito(count);
+    };
+    window.addEventListener('carritoUpdate', handler);
+    // Emitir evento inicial para alinear otros listeners (opcional)
+    try {
+      const guardado = localStorage.getItem('carrito');
+      const items = guardado ? JSON.parse(guardado) : [];
+      const ids = items.map(i => i.id);
+      const count = items.reduce((acc, p) => acc + (p.cantidad || 1), 0);
+      window.dispatchEvent(new CustomEvent('carritoUpdate', { detail: { count, ids } }));
+    } catch {}
+    return () => window.removeEventListener('carritoUpdate', handler);
+  }, []);
 
 
 
@@ -121,8 +139,8 @@ export default function Sidebar() {
     return (
       <div className="bg-light min-vh-100">
         {navbar}
-        <div className="d-flex flex-column justify-content-center align-items-center py-4">
-          <div className="w-100" style={{ maxWidth: 700 }}>
+        <div className={`d-flex flex-column py-4 ${view === 'stock' ? '' : 'justify-content-center align-items-center'}`}>
+          <div className="w-100" style={view === 'stock' ? undefined : { maxWidth: 700 }}>
             {view === 'stock' && <Stock />}
             {view === 'carrito' && <Carrito onCantidadChange={setCantidadCarrito} />}
             {view === 'serviciotecnico' && <ServicioTecnico />}
@@ -136,8 +154,8 @@ export default function Sidebar() {
   return (
     <div className="bg-light min-vh-100">
       {navbar}
-      <div className="d-flex flex-column justify-content-center align-items-center py-4">
-        <div className="w-100" style={{ maxWidth: 700 }}>
+      <div className={`d-flex flex-column py-4 ${view === 'stock' ? '' : 'justify-content-center align-items-center'}`}>
+        <div className="w-100" style={view === 'stock' ? undefined : { maxWidth: 700 }}>
           {view === 'productos' && <Productos />}
           {view === 'stock' && <Stock />}
           {view === 'editarproducto' && <EditarProducto />}
