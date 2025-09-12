@@ -10,6 +10,7 @@ import EditarProducto from './EditarProducto';
 import Notas from './notas';
 import Login from './Login';
 import Carrito from './Carrito';
+import Footer from './Footer';
 
 export default function Sidebar() {
   const [view, setView] = useState('stock');
@@ -123,13 +124,14 @@ export default function Sidebar() {
   // Si el usuario pulsa "Usuarios", mostrar el login
   if (view === 'usuarios') {
     return (
-      <div className="bg-light min-vh-100">
+      <div className="bg-light min-vh-100 d-flex flex-column">
         {navbar}
         <Login onLogin={user => {
           setUsuario(user);
           localStorage.setItem('usuario', JSON.stringify(user));
           setView('stock');
         }} />
+        <Footer />
       </div>
     );
   }
@@ -137,24 +139,25 @@ export default function Sidebar() {
   // Si no hay usuario, mostrar Stock y Carrito, y el icono de carrito en el navbar
   if (!usuario) {
     return (
-      <div className="bg-light min-vh-100">
+      <div className="bg-light min-vh-100 d-flex flex-column">
         {navbar}
-        <div className={`d-flex flex-column py-4 ${view === 'stock' ? '' : 'justify-content-center align-items-center'}`}>
+        <div className={`d-flex flex-column py-4 flex-grow-1 ${view === 'stock' ? '' : 'justify-content-center align-items-center'}`}>
           <div className="w-100" style={view === 'stock' ? undefined : { maxWidth: 700 }}>
             {view === 'stock' && <Stock />}
             {view === 'carrito' && <Carrito onCantidadChange={setCantidadCarrito} />}
             {view === 'serviciotecnico' && <ServicioTecnico />}
           </div>
         </div>
+        <Footer />
       </div>
     );
   }
 
   // Usuario autenticado: navegación completa
   return (
-    <div className="bg-light min-vh-100">
+    <div className="bg-light min-vh-100 d-flex flex-column">
       {navbar}
-      <div className={`d-flex flex-column py-4 ${view === 'stock' ? '' : 'justify-content-center align-items-center'}`}>
+      <div className={`d-flex flex-column py-4 flex-grow-1 ${view === 'stock' ? '' : 'justify-content-center align-items-center'}`}>
         <div className="w-100" style={view === 'stock' ? undefined : { maxWidth: 700 }}>
           {view === 'productos' && <Productos />}
           {view === 'stock' && <Stock />}
@@ -164,6 +167,7 @@ export default function Sidebar() {
           {view === 'serviciotecnico' && <ServicioTecnico />}
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

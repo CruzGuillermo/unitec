@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import './StockDesktop.css';
 import { supabase } from '../supabaseClient';
-import { Share2, ClipboardCopy, MessageCircle, ArrowUp, ShoppingCart, Heart, SlidersHorizontal, XCircle } from 'lucide-react';
+import { Share2, ClipboardCopy, MessageCircle, ArrowUp, ShoppingCart, Heart, SlidersHorizontal, XCircle, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Loader from './Loader';
 
 export default function Stock({ onBack }) {
   const [productos, setProductos] = useState([]);
@@ -43,6 +44,8 @@ export default function Stock({ onBack }) {
   const [maxPrecio, setMaxPrecio] = useState('');
   const [orden, setOrden] = useState('');
   const [soloFavoritos, setSoloFavoritos] = useState(false);
+  // UI móvil: mostrar/ocultar filtros al tocar el icono
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   // Mini-carrito resumen
   const [miniCount, setMiniCount] = useState(() => {
     try {
@@ -58,6 +61,39 @@ export default function Stock({ onBack }) {
       return items.reduce((acc, p) => acc + ((p.precio || 0) * (p.cantidad || 1)), 0);
     } catch { return 0; }
   });
+  // Progreso para carga de subcategorías (barra verde)
+  const [subProgress, setSubProgress] = useState(0);
+  useEffect(() => {
+    let intId;
+    let timeoutId;
+    if (subLoading) {
+      setSubProgress(0);
+      intId = setInterval(() => {
+        setSubProgress((p) => Math.min(p + (Math.random() * 4 + 3), 95));
+      }, 400);
+    } else {
+      setSubProgress(100);
+      timeoutId = setTimeout(() => setSubProgress(0), 600);
+    }
+    return () => { clearInterval(intId); clearTimeout(timeoutId); };
+  }, [subLoading]);
+  // Progreso inline en grilla (barra verde)
+  const [inlineProgress, setInlineProgress] = useState(0);
+  useEffect(() => {
+    let intId;
+    let timeoutId;
+    if (loading) {
+      setInlineProgress(0);
+      intId = setInterval(() => {
+        setInlineProgress((p) => Math.min(p + (Math.random() * 4 + 2), 95));
+      }, 400);
+    } else {
+      // completar rápido y limpiar
+      setInlineProgress(100);
+      timeoutId = setTimeout(() => setInlineProgress(0), 800);
+    }
+    return () => { clearInterval(intId); clearTimeout(timeoutId); };
+  }, [loading]);
 
   // Productos filtrados + ordenamiento
   const productosFiltradosBase = productos.filter(p => {
@@ -198,17 +234,20 @@ export default function Stock({ onBack }) {
 
   return (
     <div className="stock-desktop-container" style={{ position: 'relative' }}>
+  <Loader visible={loading} text={'Cargando productos...'} />
       <div className="stock-desktop-grid">
         <aside className="stock-filtros">
-          <div className="mb-2 d-flex search-row">
-            <input
-              type="text"
-              className="form-control text-center"
-              style={{ maxWidth: 220, minWidth: 120 }}
-              placeholder="Buscar por nombre..."
-              value={busqueda}
-              onChange={e => setBusqueda(e.target.value)}
-            />
+          <div className="mb-2 search-row" style={{ maxWidth: 260 }}>
+            <div className="input-group input-group-sm">
+              <span className="input-group-text bg-white"><Search size={16} className="text-muted" /></span>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Buscar por nombre..."
+                value={busqueda}
+                onChange={e => setBusqueda(e.target.value)}
+              />
+            </div>
           </div>
           {isDesktop ? (
             <div className="filters-desktop">
@@ -241,17 +280,15 @@ export default function Stock({ onBack }) {
               <div className="filter-card">
                 <div className="filter-title d-flex align-items-center">
                   <span>Subcategorías</span>
-                  {subLoading && (
-                    <div className="spinner-border spinner-border-sm text-secondary ms-2" role="status">
-                      <span className="visually-hidden">Cargando...</span>
-                    </div>
-                  )}
                 </div>
                 {categoriaId ? (
                   subLoading ? (
-                    <div className="text-muted" style={{ fontSize: 14 }}>
-                      <div className="spinner-border spinner-border-sm text-secondary me-2" role="status" />
-                      Cargando subcategorías...
+                    <div>
+                      <small className="text-muted d-block mb-1">{Math.round(subProgress)}%</small>
+                      <div className="progress" style={{ height: 6, maxWidth: 240 }}>
+                        <div className="progress-bar bg-success" role="progressbar" style={{ width: subProgress + '%', transition: 'width .25s ease' }} aria-valuenow={Math.round(subProgress)} aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                      <div className="text-muted mt-2" style={{ fontSize: 14 }}>Cargando subcategorías...</div>
                     </div>
                   ) : (
                     <div className="filter-chips">
@@ -339,13 +376,21 @@ export default function Stock({ onBack }) {
             </div>
           ) : (
             <div className="card mobile-filters-card p-2 mb-3">
-              <div className="d-flex align-items-center justify-content-between mb-2">
+              <div
+                className="d-flex align-items-center justify-content-between mb-2"
+                role="button"
+                onClick={() => setMobileFiltersOpen(v => !v)}
+                aria-expanded={mobileFiltersOpen}
+                title={mobileFiltersOpen ? 'Ocultar filtros' : 'Mostrar filtros'}
+                style={{ userSelect: 'none' }}
+              >
                 <div className="d-flex align-items-center gap-2">
                   <SlidersHorizontal size={16} className="text-primary" />
                   <span className="fw-semibold small text-primary">Filtros</span>
                 </div>
                 <span className="badge bg-light text-secondary border">{productosFiltrados.length}</span>
               </div>
+              {mobileFiltersOpen && (
               <div className="row g-2">
                 <div className="col-12">
                   <label className="form-label small mb-1">Categoría</label>
@@ -362,6 +407,14 @@ export default function Stock({ onBack }) {
                 </div>
                 <div className="col-12">
                   <label className="form-label small mb-1">Subcategoría</label>
+                  {subLoading && (
+                    <>
+                      <small className="text-muted d-block mb-1">{Math.round(subProgress)}%</small>
+                      <div className="progress mb-2" style={{ height: 6 }}>
+                        <div className="progress-bar bg-success" role="progressbar" style={{ width: subProgress + '%', transition: 'width .25s ease' }} aria-valuenow={Math.round(subProgress)} aria-valuemin="0" aria-valuemax="100"></div>
+                      </div>
+                    </>
+                  )}
                   <select
                     className="form-select form-select-sm"
                     value={subcategoriaId}
@@ -410,7 +463,7 @@ export default function Stock({ onBack }) {
                   <div className="form-check m-0">
                     <input className="form-check-input" type="checkbox" id="soloFavCheckMobile" checked={soloFavoritos} onChange={e => setSoloFavoritos(e.target.checked)} />
                     <label className="form-check-label ms-1" htmlFor="soloFavCheckMobile" style={{ whiteSpace: 'nowrap' }}>
-                      Solo fav ({Array.from(favoritos).length})
+                      Favoritos ({Array.from(favoritos).length})
                     </label>
                   </div>
                   <div className="d-flex align-items-center gap-2">
@@ -426,12 +479,21 @@ export default function Stock({ onBack }) {
                   </div>
                 </div>
               </div>
+              )}
             </div>
           )}
         </aside>
         <section className="stock-productos container-fluid px-0">
           <div className="row g-3 mx-0">
-            {productosFiltrados.length > 0 ? productosFiltrados.map(p => (
+            {loading ? (
+              <div className="col-12 d-flex flex-column align-items-center py-5">
+                <small className="text-muted mb-2">{Math.round(inlineProgress)}%</small>
+                <div className="progress w-100" style={{ height: 12 }}>
+                  <div className="progress-bar bg-success" role="progressbar" style={{ width: inlineProgress + '%', transition: 'width .25s ease' }} aria-valuenow={Math.round(inlineProgress)} aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <small className="text-muted mt-2">Cargando productos...</small>
+              </div>
+            ) : productosFiltrados.length > 0 ? productosFiltrados.map(p => (
               <motion.div
                 key={p.id}
                 className="col-6 col-md-4 col-lg-4 col-xl-3"
